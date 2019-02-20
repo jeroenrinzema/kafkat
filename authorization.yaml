@@ -1,0 +1,7 @@
+topic:
+  name: "authorization"
+  partitions: 100
+config:
+  cleanup.policy: delete
+  flush.messages: 0
+---
