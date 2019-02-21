@@ -11,4 +11,5 @@ require (
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
+	gopkg.in/yaml.v2 v2.2.2
 )

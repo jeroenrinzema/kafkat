@@ -1,66 +1,55 @@
 package main
 
 import (
+	"flag"
 	"log"
-
-	"github.com/Shopify/sarama"
+	"mime"
+	"os"
+	"path/filepath"
 )
 
-func main() {
-	config := sarama.NewConfig()
-	config.Version = sarama.V1_1_0_0
+// Supported configuration types
+const (
+	TypeYAML = "text/yaml; charset=utf-8"
+)
 
-	brokers := []string{
-		"192.168.99.100:9092",
-	}
+// Flag variables
+var (
+	TargetPath     = ""
+	Brokers        = ""
+	KafkaVersion   = ""
+	StrictMode     = false
+	ValidationMode = false
+)
 
-	admin, err := sarama.NewClusterAdmin(brokers, config)
-	if err != nil {
-		panic(err)
-	}
-
-	defer admin.Close()
-
-	topic := "authorization"
-	// tdetail := sarama.TopicDetail{
-	// 	NumPartitions:     1,
-	// 	ReplicationFactor: 1,
-	// }
-
-	atconf := make(map[string]*string)
-	d := "delete"
-	atconf["cleanup.policy"] = &d
-
-	topics, err := admin.ListTopics()
-	if err != nil {
-		panic(err)
-	}
-
-	_, ok := topics[topic]
-
-	// err = admin.CreateTopic(topic, &tdetail, false)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	err = admin.AlterConfig(sarama.TopicResource, topic, atconf, false)
-	if err != nil {
-		panic(err)
-	}
-
-	tconf, err := admin.DescribeConfig(sarama.ConfigResource{
-		Type:        sarama.TopicResource,
-		Name:        "ok",
-		ConfigNames: []string{},
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	log.Println(len(tconf))
+func init() {
+	// Include the yaml/yml type extentions to the default mime package
+	mime.AddExtensionType(".yaml", TypeYAML)
+	mime.AddExtensionType(".yml", TypeYAML)
 }
 
-// CollectConfigurations finds all available topic configuration files.
-func CollectConfigurations(dir string) *Migration {
-	return nil
+func main() {
+	target, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		panic(err)
+	}
+
+	flag.StringVar(&TargetPath, "target", target, "Target directory, by default is the current directory used")
+	flag.StringVar(&Brokers, "brokers", "", "Initial Kafka broker hosts")
+	flag.StringVar(&KafkaVersion, "kafka-version", "1.1.0", "Initial Kafka broker hosts")
+	flag.BoolVar(&StrictMode, "strict", false, "Strict configuration mode")
+	flag.BoolVar(&ValidationMode, "validation", false, "Validation mode")
+	flag.Parse()
+
+	migration, err := Scan(TargetPath, StrictMode, ValidationMode)
+	if err != nil {
+		panic(err)
+	}
+
+	err = migration.Prepare(Brokers, KafkaVersion)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Println(migration)
 }
