@@ -9,6 +9,7 @@ import (
 // Logging messages
 const (
 	TopicFound              = "Found: %s, with the configuration %v\n"
+	TopicMarkedForDeletion  = "The topic: %s, is not defined in any configuration entry and is marked for deletion\n"
 	EntryPropertyNotDefined = "The configuration property: %s on the topic %s, is not defined in the configuration entry\n"
 	EntryPropertyDeleted    = "The configuration property: %s on the topic %s, is marked for deletion\n"
 	AlteredConfiguration    = "The configuration for the topic %s, has been modified %+v\n"

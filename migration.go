@@ -18,8 +18,8 @@ import (
 
 // Logging messages
 const (
-	EntryValid       = "Topic configuration is valid: %s\n"
-	EntryInvalid     = "Topic configuration is invalid: %s, %s\n"
+	EntryValid       = "Topic configuration for: %s is valid\n"
+	EntryInvalid     = "Topic configuration for: %s, is invalid: %s\n"
 	EntrySuccessfull = "Successfully altered: %s\n"
 	EntryFailed      = "Unable to alter: %s, %s\n"
 )
@@ -68,78 +68,8 @@ func Scan(path string, strict, validate bool) (*Migration, error) {
 		file.Close()
 	}
 
-	return migration, nil
-}
-
-// EntryStatus represents a migration entry status
-type EntryStatus struct {
-	Success bool
-	Err     error
-	Topic   Topic
-	Content Entry
-}
-
-// Entry represents a Kafka topic configuration entry
-type Entry struct {
-	Topic  map[string]string  `yaml:"topic"`
-	Config map[string]*string `yaml:"config"`
-}
-
-// NewMigration constructs a new migration struct
-func NewMigration() *Migration {
-	migration := &Migration{
-		Topics: make(map[string]Topic),
-		marked: make(map[string]Topic),
-	}
-
-	return migration
-}
-
-// Migration represents a Kafka topic migration
-type Migration struct {
-	Entries      []Entry
-	Topics       map[string]Topic
-	ValidateMode bool
-	StrictMode   bool
-
-	mutex  sync.RWMutex
-	client *KafkaAdmin
-	marked map[string]Topic
-}
-
-// Prepare prepares the migration to preform actions on the Kafka cluster
-func (migration *Migration) Prepare(brokers, version string) error {
-	b := strings.Split(brokers, ",")
-	v, err := sarama.ParseKafkaVersion(version)
-	if err != nil {
-		return err
-	}
-
-	client, err := NewKafkaAdmin(b, v)
-	if err != nil {
-		return err
-	}
-
-	topics, err := client.ListTopics()
-	if err != nil {
-		return err
-	}
-
-	migration.mutex.RLock()
-	defer migration.mutex.RUnlock()
-
-	migration.Topics = topics
-	migration.client = client
-
-	return nil
-}
-
-// Apply applies the set entries to the defined Kafka topics
-func (migration *Migration) Apply() error {
-	results := make([]*EntryStatus, len(migration.Entries))
-
 	for _, entry := range migration.Entries {
-		// Ignore empty configurations
+		// Ignore empty entries
 		if len(entry.Topic) == 0 {
 			continue
 		}
@@ -168,7 +98,8 @@ func (migration *Migration) Apply() error {
 		}
 
 		topic := Topic{
-			Name: name,
+			Name:          name,
+			ConfigEntries: entry.Config,
 		}
 
 		if partitions > 0 {
@@ -179,15 +110,88 @@ func (migration *Migration) Apply() error {
 			topic.ReplicationFactor = int16(replications)
 		}
 
+		migration.TopicEntries[topic.Name] = topic
+	}
+
+	return migration, nil
+}
+
+// NewMigration constructs a new migration struct
+func NewMigration() *Migration {
+	migration := &Migration{
+		Topics:       make(map[string]Topic),
+		TopicEntries: make(map[string]Topic),
+		marked:       make(map[string]Topic),
+	}
+
+	return migration
+}
+
+// Migration represents a Kafka topic migration
+type Migration struct {
+	Entries      []Entry
+	TopicEntries map[string]Topic
+	Topics       map[string]Topic
+	ValidateMode bool
+	StrictMode   bool
+
+	mutex  sync.RWMutex
+	client *KafkaAdmin
+	marked map[string]Topic
+}
+
+// Prepare prepares the migration to preform actions on the Kafka cluster
+func (migration *Migration) Prepare(brokers, version string) error {
+	b := strings.Split(brokers, ",")
+	v, err := sarama.ParseKafkaVersion(version)
+	if err != nil {
+		return err
+	}
+
+	client, err := NewKafkaAdmin(b, v)
+	if err != nil {
+		return err
+	}
+
+	topics, err := client.ListTopics()
+	if err != nil {
+		return err
+	}
+
+	for _, topic := range topics {
+		_, has := migration.TopicEntries[topic.Name]
+		if has {
+			continue
+		}
+
+		topic.Delete = true
+		migration.marked[topic.Name] = topic
+
+		log.Printf(TopicMarkedForDeletion, topic.Name)
+	}
+
+	migration.mutex.RLock()
+	defer migration.mutex.RUnlock()
+
+	migration.Topics = topics
+	migration.client = client
+
+	return nil
+}
+
+// Apply applies the set entries to the defined Kafka topics
+func (migration *Migration) Apply() error {
+	results := make([]*EntryStatus, len(migration.Entries))
+
+	for _, topic := range migration.TopicEntries {
 		status := &EntryStatus{
-			Topic:   topic,
-			Content: entry,
+			Topic: topic,
 		}
 
 		results = append(results, status)
 
 		if migration.ValidateMode {
-			err := migration.client.ValidateConfiguration(topic, entry.Config, migration.StrictMode)
+			err := migration.client.ValidateConfiguration(topic, topic.ConfigEntries, migration.StrictMode)
 			if err != nil {
 				status.Err = err
 				continue
@@ -196,12 +200,12 @@ func (migration *Migration) Apply() error {
 			continue
 		}
 
-		_, exists := migration.Topics[name]
+		_, exists := migration.Topics[topic.Name]
 		if !exists {
 			migration.client.CreateTopic(topic)
 		}
 
-		err = migration.client.AlterConfiguration(topic, entry.Config, migration.StrictMode)
+		err := migration.client.AlterConfiguration(topic, topic.ConfigEntries, migration.StrictMode)
 		if err != nil {
 			status.Err = err
 			continue
