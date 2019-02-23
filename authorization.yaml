@@ -3,5 +3,5 @@ topic:
   partitions: 100
 config:
   cleanup.policy: delete
-  flush.messages: 0
+  # flush.messages: 0
 ---

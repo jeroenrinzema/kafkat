@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"log"
 	"mime"
 	"os"
 	"path/filepath"
@@ -51,5 +50,11 @@ func main() {
 		panic(err)
 	}
 
-	log.Println(migration)
+	migration.StrictMode = StrictMode
+	migration.ValidateMode = ValidationMode
+
+	err = migration.Apply()
+	if err != nil {
+		panic(err)
+	}
 }
