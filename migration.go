@@ -18,10 +18,12 @@ import (
 
 // Logging messages
 const (
-	EntryValid       = "Topic configuration for: %s is valid\n"
-	EntryInvalid     = "Topic configuration for: %s, is invalid: %s\n"
-	EntrySuccessfull = "Successfully altered: %s\n"
-	EntryFailed      = "Unable to alter: %s, %s\n"
+	EntryValid            = "Topic configuration for: %s is valid\n"
+	EntryInvalid          = "Topic configuration for: %s, is invalid: %s\n"
+	EntrySuccessfull      = "Successfully altered: %s\n"
+	EntryFailed           = "Unable to alter: %s, %s\n"
+	MarkedDeleteFailed    = "Unable to delete the marked topic: %s, %s\n"
+	MarkedDeleteCompleted = "Successfully deleted the marked topic: %s\n"
 )
 
 // Entry value keys
@@ -158,16 +160,18 @@ func (migration *Migration) Prepare(brokers, version string) error {
 		return err
 	}
 
-	for _, topic := range topics {
-		_, has := migration.TopicEntries[topic.Name]
-		if has {
-			continue
+	if migration.StrictMode {
+		for _, topic := range topics {
+			_, has := migration.TopicEntries[topic.Name]
+			if has {
+				continue
+			}
+
+			topic.Delete = true
+			migration.marked[topic.Name] = topic
+
+			log.Printf(TopicMarkedForDeletion, topic.Name)
 		}
-
-		topic.Delete = true
-		migration.marked[topic.Name] = topic
-
-		log.Printf(TopicMarkedForDeletion, topic.Name)
 	}
 
 	migration.mutex.RLock()
@@ -235,6 +239,21 @@ results:
 			}
 
 			log.Printf(EntrySuccessfull, status.Topic.Name)
+		}
+	}
+
+	if !migration.ValidateMode {
+		// Checking marked topics
+		for _, topic := range migration.marked {
+			switch {
+			case topic.Delete:
+				err := migration.client.DeleteTopic(topic)
+				if err != nil {
+					log.Printf(MarkedDeleteFailed, topic.Name, err)
+				}
+
+				log.Printf(MarkedDeleteCompleted, topic.Name)
+			}
 		}
 	}
 

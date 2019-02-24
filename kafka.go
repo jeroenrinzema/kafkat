@@ -163,3 +163,14 @@ func (kafka *KafkaAdmin) ListTopics() (map[string]Topic, error) {
 
 	return topics, nil
 }
+
+// DeleteTopic deletes the given Kafka topic from the cluster.
+// *Warning*: this action is permanenet and cannot be reversed
+func (kafka *KafkaAdmin) DeleteTopic(topic Topic) error {
+	err := kafka.client.DeleteTopic(topic.Name)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

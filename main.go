@@ -45,13 +45,13 @@ func main() {
 		panic(err)
 	}
 
+	migration.StrictMode = StrictMode
+	migration.ValidateMode = ValidationMode
+
 	err = migration.Prepare(Brokers, KafkaVersion)
 	if err != nil {
 		panic(err)
 	}
-
-	migration.StrictMode = StrictMode
-	migration.ValidateMode = ValidationMode
 
 	err = migration.Apply()
 	if err != nil {
