@@ -1,12 +1,17 @@
-# Kafka topics
+# KAFKAT - topics management as code
 
-This repository manages the initialization and configuration of Kafka topics.
-Topics are created with the Kafka topics utility tool.
+KAFKAT manages a topic's replication factor, partition size and topic configuration as code.
+
+```yaml
+topic:
+  name: click-events
+  partitions: 300
+  replication: 2
+config:
+  cleanup.policy: delete
+  flush.messages: 100000
+```
 
 ```bash
-# Create a topic
-kafka/bin/kafka-topics.sh --create \
-  --zookeeper localhost:2181 \
-  --replication-factor 1 --partitions 13 \
-  --topic my-topic
+$ kafkat -brokers=... -strict -validate
 ```
