@@ -29,7 +29,7 @@ const (
 // Entry value keys
 const (
 	EntryKeyTopicName            = "name"
-	EntryKeyTopicPartitionSize   = "partition"
+	EntryKeyTopicPartitionSize   = "partitions"
 	EntryKeyTopicReplicationSize = "replication"
 )
 
