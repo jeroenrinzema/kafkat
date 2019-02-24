@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"mime"
 	"os"
 	"path/filepath"
@@ -14,11 +15,18 @@ const (
 
 // Flag variables
 var (
-	TargetPath     = ""
-	Brokers        = ""
-	KafkaVersion   = ""
-	StrictMode     = false
-	ValidationMode = false
+	TargetPath   = ""
+	Brokers      = ""
+	KafkaVersion = ""
+	StrictMode   = false
+	ValidateMode = false
+)
+
+// Reporting templates
+const (
+	devider         = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+	HeaderReport    = devider + "\tKafka bootstrap brokers:\t%s\n\tValidation mode:\t\t%t\n\tStrict mode:\t\t\t%t\n\tTarget path:\t\t\t%s\n" + devider
+	MigrationReport = devider + "\tValidation mode:\t\t%t\n\tStrict mode:\t\t\t%t\n\tKafka bootstrap brokers:\t%s\n\tTopics found:\t\t\t%v\n\tTopics entries:\t\t\t%v\n\tTopics marked for deletion:\t%v\n" + devider
 )
 
 func init() {
@@ -37,16 +45,18 @@ func main() {
 	flag.StringVar(&Brokers, "brokers", "", "Initial Kafka broker hosts")
 	flag.StringVar(&KafkaVersion, "kafka-version", "1.1.0", "Initial Kafka broker hosts")
 	flag.BoolVar(&StrictMode, "strict", false, "Strict configuration mode")
-	flag.BoolVar(&ValidationMode, "validation", false, "Validation mode")
+	flag.BoolVar(&ValidateMode, "validation", false, "Validation mode")
 	flag.Parse()
 
-	migration, err := Scan(TargetPath, StrictMode, ValidationMode)
+	fmt.Printf(HeaderReport, Brokers, ValidateMode, StrictMode, TargetPath)
+
+	migration, err := Scan(TargetPath, StrictMode, ValidateMode)
 	if err != nil {
 		panic(err)
 	}
 
 	migration.StrictMode = StrictMode
-	migration.ValidateMode = ValidationMode
+	migration.ValidateMode = ValidateMode
 
 	err = migration.Prepare(Brokers, KafkaVersion)
 	if err != nil {
@@ -57,4 +67,39 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	topics := []string{}
+	entries := []string{}
+	deleted := []string{}
+
+	for _, topic := range migration.Topics {
+		name := topic.Name
+		if len(name) == 0 {
+			continue
+		}
+
+		topics = append(topics, name)
+	}
+
+	for _, entry := range migration.Entries {
+		name := entry.Topic[EntryKeyTopicName]
+		if len(name) == 0 {
+			continue
+		}
+
+		entries = append(entries, name)
+	}
+
+	for _, topic := range migration.marked {
+		name := topic.Name
+		if len(name) == 0 {
+			continue
+		}
+
+		if topic.Delete {
+			deleted = append(deleted, name)
+		}
+	}
+
+	fmt.Printf(MigrationReport, migration.ValidateMode, migration.StrictMode, Brokers, topics, entries, deleted)
 }
