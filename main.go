@@ -36,21 +36,33 @@ func init() {
 }
 
 func main() {
-	target, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		panic(err)
-	}
+	// Recover from panics and exit with a error
+	defer func() {
+		err := recover()
+		if err == nil {
+			os.Exit(0)
+			return
+		}
 
-	flag.StringVar(&TargetPath, "target", target, "Target directory, by default is the current directory used")
+		fmt.Println(err)
+		os.Exit(1)
+	}()
+
+	flag.StringVar(&TargetPath, "target", ".", "Target directory, by default is the current directory used")
 	flag.StringVar(&Brokers, "brokers", "", "Initial Kafka broker hosts")
 	flag.StringVar(&KafkaVersion, "kafka-version", "1.1.0", "Initial Kafka broker hosts")
 	flag.BoolVar(&StrictMode, "strict", false, "Strict configuration mode")
 	flag.BoolVar(&ValidateMode, "validation", false, "Validation mode")
 	flag.Parse()
 
-	fmt.Printf(HeaderReport, Brokers, ValidateMode, StrictMode, TargetPath)
+	target, err := filepath.Abs(TargetPath)
+	if err != nil {
+		panic(err)
+	}
 
-	migration, err := Scan(TargetPath, StrictMode, ValidateMode)
+	fmt.Printf(HeaderReport, Brokers, ValidateMode, StrictMode, target)
+
+	migration, err := Scan(target, StrictMode, ValidateMode)
 	if err != nil {
 		panic(err)
 	}
