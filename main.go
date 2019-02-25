@@ -25,8 +25,8 @@ var (
 // Reporting templates
 const (
 	devider         = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-	HeaderReport    = devider + "\tKafka bootstrap brokers:\t%s\n\tValidation mode:\t\t%t\n\tStrict mode:\t\t\t%t\n\tTarget path:\t\t\t%s\n" + devider
-	MigrationReport = devider + "\tValidation mode:\t\t%t\n\tStrict mode:\t\t\t%t\n\tKafka bootstrap brokers:\t%s\n\tTopics found:\t\t\t%v\n\tTopics entries:\t\t\t%v\n\tTopics marked for deletion:\t%v\n" + devider
+	HeaderReport    = devider + "\tKafka bootstrap brokers:\t%s\n\tValidate mode:\t\t\t%t\n\tStrict mode:\t\t\t%t\n\tTarget path:\t\t\t%s\n" + devider
+	MigrationReport = devider + "\tValidate mode:\t\t\t%t\n\tStrict mode:\t\t\t%t\n\tKafka bootstrap brokers:\t%s\n\tTopics found:\t\t\t%v\n\tTopics entries:\t\t\t%v\n\tTopics marked for deletion:\t%v\n" + devider
 )
 
 func init() {
@@ -52,7 +52,7 @@ func main() {
 	flag.StringVar(&Brokers, "brokers", "", "Initial Kafka broker hosts")
 	flag.StringVar(&KafkaVersion, "kafka-version", "1.1.0", "Initial Kafka broker hosts")
 	flag.BoolVar(&StrictMode, "strict", false, "Strict configuration mode")
-	flag.BoolVar(&ValidateMode, "validation", false, "Validation mode")
+	flag.BoolVar(&ValidateMode, "validate", false, "Validate mode")
 	flag.Parse()
 
 	target, err := filepath.Abs(TargetPath)
