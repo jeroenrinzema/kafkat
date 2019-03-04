@@ -175,7 +175,6 @@ func (migration *Migration) Prepare(brokers, version string) error {
 
 			topic.Delete = true
 			migration.marked[topic.Name] = topic
-
 			log.Printf(TopicMarkedForDeletion, topic.Name)
 		}
 	}
@@ -200,19 +199,25 @@ func (migration *Migration) Apply() error {
 
 		results = append(results, status)
 
+		_, exists := migration.Topics[topic.Name]
+		if !exists {
+			migration.client.CreateTopic(topic)
+		}
+
 		if migration.ValidateMode {
 			err := migration.client.ValidateConfiguration(topic, topic.ConfigEntries, migration.StrictMode)
 			if err != nil {
 				status.Err = err
 				continue
 			}
-			status.Success = true
-			continue
-		}
 
-		_, exists := migration.Topics[topic.Name]
-		if !exists {
-			migration.client.CreateTopic(topic)
+			status.Success = true
+
+			if !exists {
+				migration.client.DeleteTopic(topic)
+			}
+
+			continue
 		}
 
 		err := migration.client.AlterConfiguration(topic, topic.ConfigEntries, migration.StrictMode)
