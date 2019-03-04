@@ -174,7 +174,7 @@ func (migration *Migration) Prepare(brokers, version string) error {
 			}
 
 			// Ignore system topics
-			if strings.HasPrefix(topic.Name, "_") {
+			if strings.HasPrefix(topic.Name, "__") {
 				continue
 			}
 
