@@ -57,12 +57,18 @@ func Scan(path string, strict, validate bool) (*Migration, error) {
 		}
 
 		reader := bufio.NewReader(file)
-		entry := Entry{}
 
 		switch typ {
 		case TypeYAML:
 			dec := yaml.NewDecoder(reader)
-			for dec.Decode(&entry) == nil {
+
+			for {
+				entry := Entry{}
+				err := dec.Decode(&entry)
+				if err != nil {
+					break
+				}
+
 				migration.Entries = append(migration.Entries, entry)
 			}
 		}
