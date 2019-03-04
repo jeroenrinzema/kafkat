@@ -173,6 +173,11 @@ func (migration *Migration) Prepare(brokers, version string) error {
 				continue
 			}
 
+			// Ignore system topics
+			if strings.HasPrefix(topic.Name, "_") {
+				continue
+			}
+
 			topic.Delete = true
 			migration.marked[topic.Name] = topic
 			log.Printf(TopicMarkedForDeletion, topic.Name)
