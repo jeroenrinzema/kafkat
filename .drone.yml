@@ -6,7 +6,7 @@ steps:
   image: plugins/docker
   settings:
     repo: 2jours/kafkat
-    target: production
+    target: builder
     tags: ${DRONE_COMMIT}
     username: 
       from_secret: dockerhub_username
