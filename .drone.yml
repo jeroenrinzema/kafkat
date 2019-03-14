@@ -7,7 +7,7 @@ steps:
   settings:
     repo: 2jours/kafkat
     target: builder
-    tags: ${DRONE_COMMIT}
+    tags: latest
     username: 
       from_secret: dockerhub_username
     password: 
