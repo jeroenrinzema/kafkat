@@ -5,7 +5,7 @@ steps:
 - name: docker
   image: plugins/docker
   settings:
-    repo: 2Jours/kafkat
+    repo: 2jours/kafkat
     target: production
     tags: ${DRONE_COMMIT}
     username: 
