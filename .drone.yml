@@ -1,0 +1,38 @@
+---
+kind: pipeline
+name: deploy
+steps:
+- name: docker
+  image: plugins/gcr
+  settings:
+    repo: suzuka/kafkat
+    target: production
+    tags: ${DRONE_COMMIT}
+    json_key: 
+      from_secret: gcr_key
+- name: notify
+  image: plugins/slack
+  settings:
+    webhook:
+      from_secret: slack_webhook
+    channel: ontwikkelen
+  when:
+    status:
+    - success
+    - failure
+trigger:
+  branch:
+    include:
+    - master
+  event:
+    exclude:
+    - pull_request
+---
+kind: secret
+external_data:
+  gcr_key:
+    path: hidey-hole/drone/gcr
+    name: key
+  slack_webhook:
+    path: hidey-hole/drone/slack
+    name: webhook
