@@ -33,13 +33,19 @@ trigger:
     - pull_request
 ---
 kind: secret
-external_data:
-  dockerhub_username:
-    path: hidey-hole/drone/dockerhub
-    name: username
-  dockerhub_password:
-    path: hidey-hole/drone/dockerhub
-    name: password
-  slack_webhook:
-    path: hidey-hole/drone/slack
-    name: webhook
+name: dockerhub_username
+get:
+  path: hidey-hole/drone/dockerhub
+  name: username
+---
+kind: secret
+name: dockerhub_password
+get:
+  path: hidey-hole/drone/dockerhub
+  name: password
+---
+kind: secret
+name: slack_webhook
+get:
+  path: hidey-hole/drone/slack
+  name: webhook
