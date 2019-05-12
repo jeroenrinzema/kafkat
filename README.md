@@ -1,6 +1,6 @@
 # KAFKAT - topics management as code
 
-> 🚧 This project is still in a "proof of concept" state. Although that we already use KAFKA to manage our Kafka topics is it not advised to use it in production.
+> 🚧 This project is still in a "proof of concept" state. Although that we already use KAFKAT to manage our Kafka topics is it not advised to use it in production.
 
 KAFKAT is a simple CLI that manages a Kafka topic's replication factor, partition size and configuration as code. Multiple modes are available.
 
