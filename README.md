@@ -1,6 +1,6 @@
 # KAFKAT - topics management as code
 
-> 🚧 This project is still in a "proof of concept" state.
+> 🚧 This project a "proof of concept".
 
 KAFKAT is a simple CLI that manages a Kafka topic's replication factor, partition size and configuration as code. Multiple modes are available.
 
